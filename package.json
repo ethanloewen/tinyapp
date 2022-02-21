@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/ethanloewen/tinyapp/issues"
   },
-  "homepage": "https://github.com/ethanloewen/tinyapp#readme"
+  "homepage": "https://github.com/ethanloewen/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.3"
+  }
 }
