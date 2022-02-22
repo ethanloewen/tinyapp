@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const PORT = 3000;
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended: true}));
 
 app.set('view engine', 'ejs');
 
@@ -16,6 +18,15 @@ app.get('/', (req, res) => {
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
+});
+
+app.post('/urls', (req, res) => {
+  console.log(req.body);
+  res.send('OK');
+});
+
+app.get('/urls/new', (req, res) => {
+  res.render('urls_new');
 });
 
 app.get('/urls/:shortURL', (req, res) => {
@@ -34,3 +45,16 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+// generate a random 6-digit alpha numeric string 
+function generateRandomString() {
+  const allChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const stringLength = 6;
+  let outputString = '';
+  for (let i = 0; i < stringLength; i++) {
+    outputString += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+  return outputString;
+}
+
+console.log(generateRandomString());
