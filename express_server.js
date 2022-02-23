@@ -30,12 +30,20 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-// delete
+// delete url
 app.post('/urls/:shortURL/delete', (req, res) => {
   console.log('DB before delete', urlDatabase);
   delete urlDatabase[req.params.shortURL];
   console.log('DB after delete', urlDatabase);
   res.redirect('/urls');
+});
+
+// update url
+app.post('/urls/:shortURL/update', (req, res) => {
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body['longURL'];
+  console.log(urlDatabase);
+  res.redirect('/urls/' + shortURL);
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -50,10 +58,6 @@ app.get('/urls/:shortURL', (req, res) => {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.listen(PORT, () => {
