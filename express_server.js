@@ -70,6 +70,12 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
+// login page
+app.get('/login', (req, res) => {
+  const templateVars = { urls: urlDatabase, username: users[req.cookies['user_id']] };
+  res.render('urls_login', templateVars);
+});
+
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase, username: users[req.cookies['user_id']] };
   res.render('urls_index', templateVars);
