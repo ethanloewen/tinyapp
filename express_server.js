@@ -30,6 +30,14 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
+// delete
+app.post('/urls/:shortURL/delete', (req, res) => {
+  console.log('DB before delete', urlDatabase);
+  delete urlDatabase[req.params.shortURL];
+  console.log('DB after delete', urlDatabase);
+  res.redirect('/urls');
+});
+
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
