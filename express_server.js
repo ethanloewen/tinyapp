@@ -43,9 +43,23 @@ app.get('/register', (req, res) => {
   res.render('urls_register', templateVars);
 });
 
+// handle posts from /register
 app.post('/register', (req, res) => {
   const randId = generateRandomString();
+  // check if inputs are blank
+  if (req.body['email'] === '' || req.body['password'] === '') {
+    return res.sendStatus(400);
+  }
+
+  // check if email is in use already
+  for (const user in users) {
+    if (users[user]['email'] === req.body['email']) {
+      return res.sendStatus(400);
+    }
+  }
+
   console.log('before adding', users);
+  if (req.body['email'])
   users[randId] = {
     id: randId,
     email: req.body['email'],
@@ -58,7 +72,6 @@ app.post('/register', (req, res) => {
 
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase, username: users[req.cookies['user_id']] };
-  console.log(templateVars);
   res.render('urls_index', templateVars);
 });
 
@@ -85,7 +98,6 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/urls/:shortURL/update', (req, res) => {
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body['longURL'];
-  console.log(urlDatabase);
   res.redirect('/urls/' + shortURL);
 });
 
