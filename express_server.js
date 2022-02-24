@@ -11,8 +11,15 @@ app.set('view engine', 'ejs');
 
 // url data
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "exampleID"
+  },
+
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "exampleID"
+  }
 };
 
 // user data
@@ -24,25 +31,6 @@ const users = {
   },
 }
 
-// return the user_id's object if the cookie exists
-// const getUserId = () => {
-//   if(req.cookies['user_id']) {
-//     return users[user_id];
-//   }
-//   return 'default';
-// };
-
-// check if an email exists and return the user_id if found
-const checkEmailExists = function(email) {
-  for (const user in users) {
-    if (users[user]['email'] === email) {
-      return user;
-    }
-  }
-  return false;
-};
-
-
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -50,6 +38,10 @@ app.get('/', (req, res) => {
 // load register page
 app.get('/register', (req, res) => {
   const templateVars = { urls: urlDatabase, userId: users[req.cookies['user_id']] };
+  // redirect if user is logged in
+  if (req.cookies['user_id']) {
+    return res.redirect('/urls');
+  }
   res.render('urls_register', templateVars);
 });
 
@@ -67,14 +59,14 @@ app.post('/register', (req, res) => {
     return res.sendStatus(400);
   }
 
-  console.log('before adding', users);
+  //console.log('before adding', users);
   if (req.body['email'])
   users[randId] = {
     id: randId,
     email: req.body['email'],
     password: req.body['password']
   };
-  console.log('after adding', users);
+  //console.log('after adding', users);
   res.cookie('user_id', randId);
   res.redirect('/urls');
 });
@@ -112,13 +104,25 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+// add new url
 app.post('/urls', (req, res) => {
+  if (!req.cookies['user_id']) {
+    return res.send('Error: user not logged in');
+  }
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body['longURL'];
+  console.log('DB before adding new', urlDatabase);
+  urlDatabase[shortURL] = { longURL: req.body['longURL'] };
+  urlDatabase[shortURL]['userID'] = req.cookies['user_id'];
+  console.log('DB after adding new', urlDatabase);
   res.redirect('/urls/' + shortURL);
 });
 
+// render new url page
 app.get('/urls/new', (req, res) => {
+  // redirect if user is not logged in
+  if (!req.cookies['user_id']) {
+    res.redirect('/urls');
+  }
   const templateVars = { userId: users[req.cookies['user_id']] };
   res.render('urls_new', templateVars);
 });
@@ -134,23 +138,22 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 // update url
 app.post('/urls/:shortURL/update', (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body['longURL'];
+  urlDatabase[shortURL]['longURL'] = req.body['longURL'];
   res.redirect('/urls/' + shortURL);
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  if (!(req.params.shortURL in urlDatabase)) {
+    return res.send("Error: short URL '" + req.params.shortURL + "' not found");
+  }
+  const longURL = urlDatabase[req.params.shortURL]['longURL'];
   res.redirect(longURL);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], userId: users[req.cookies['user_id']] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'], userId: users[req.cookies['user_id']] };
   res.render('urls_show', templateVars);
 });
-
-// app.get('/urls.json', (req, res) => {
-//   res.json(urlDatabase);
-// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -166,3 +169,13 @@ function generateRandomString() {
   }
   return outputString;
 }
+
+// check if an email exists and return the user_id if found
+const checkEmailExists = function(email) {
+  for (const user in users) {
+    if (users[user]['email'] === email) {
+      return user;
+    }
+  }
+  return false;
+};
