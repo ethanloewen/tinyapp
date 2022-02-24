@@ -136,12 +136,33 @@ app.get('/urls/new', (req, res) => {
 
 // delete url
 app.post('/urls/:shortURL/delete', (req, res) => {
+  if (!req.cookies['user_id']) {
+    return res.send('Error: must be logged in to delete a URL');
+  }
+
+  const uId = req.cookies['user_id'];
+  let filteredUrls = urlsForUser(uId);
+  if (!(req.params.shortURL in filteredUrls)) {
+    return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
+  }
+
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
 
 // update url
 app.post('/urls/:shortURL/update', (req, res) => {
+
+  if (!req.cookies['user_id']) {
+    return res.send('Error: must be logged in to update a URL');
+  }
+
+  const uId = req.cookies['user_id'];
+  let filteredUrls = urlsForUser(uId);
+  if (!(req.params.shortURL in filteredUrls)) {
+    return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
+  }
+
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL]['longURL'] = req.body['longURL'];
   res.redirect('/urls');
@@ -155,7 +176,7 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(longURL);
 });
 
-//breakpoint
+// render the urls_show page
 app.get('/urls/:shortURL', (req, res) => {
   if (!req.cookies['user_id']) {
     return res.send('Error: user not logged in');
@@ -166,12 +187,7 @@ app.get('/urls/:shortURL', (req, res) => {
   if (!(req.params.shortURL in filteredUrls)) {
     return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
   }
-  // for (const url in filteredUrls) {
-  //   if (filteredUrls[url]['userID'] === uId) {
-
-  //   }
-  // }
-
+  
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'], userId: users[req.cookies['user_id']] };
   res.render('urls_show', templateVars);
 });
