@@ -112,7 +112,7 @@ app.post('/logout', (req, res) => {
 app.get('/urls', (req, res) => {
 
   if (!req.session.user_id) {
-    return res.send('<a href="/login"><button>Please log in</button></a>');
+    return res.send('<h3 style="display: inline; margin-right: 15px;">Error: User not logged in</h3><a href="/login" style="display: inline"><button>Please log in</button></a>');
   }
 
   const uId = req.session.user_id;
@@ -130,14 +130,14 @@ app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body['longURL'] };
   urlDatabase[shortURL]['userID'] = req.session.user_id;
-  res.redirect('/urls/' + shortURL);
+  res.redirect('/urls');
 });
 
 // render new url page
 app.get('/urls/new', (req, res) => {
   // redirect if user is not logged in
   if (!req.session.user_id) {
-    res.redirect('/urls');
+    return res.redirect('/urls');
   }
   const templateVars = { userId: users[req.session.user_id] };
   res.render('urls_new', templateVars);
@@ -191,10 +191,14 @@ app.get('/urls/:shortURL', (req, res) => {
     return res.send('Error: user not logged in');
   }
 
+  if (!(req.params.shortURL in urlDatabase)) {
+    return res.send('Error: The URL ' + req.params.shortURL + ' does not exists');
+  }
+
   const uId = req.session.user_id;
   let filteredUrls = getUrlsForUser(uId, urlDatabase);
   if (!(req.params.shortURL in filteredUrls)) {
-    return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
+    return res.send('Error: The URL \'' + req.params.shortURL + '\' is not linked to your account');
   }
   
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'], userId: users[req.session.user_id] };
