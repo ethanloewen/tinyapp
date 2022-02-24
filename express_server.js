@@ -18,6 +18,9 @@ const bcrypt = require('bcryptjs');
 
 app.set('view engine', 'ejs');
 
+// import helper functions
+const { getUserByEmail, getUrlsForUser, generateRandomString } = require('./helpers');
+
 // url data
 const urlDatabase = {
   "b2xVn2": {
@@ -64,7 +67,7 @@ app.post('/register', (req, res) => {
 
   // check if email is in use already
   const email = req.body['email'];
-  if (checkEmailExists(email) !== false) {
+  if (getUserByEmail(email, users)) {
     return res.sendStatus(400);
   }
 
@@ -89,14 +92,12 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body['email'];
   const password = req.body['password'];
-  const emailCheck = checkEmailExists(email);
-  if (emailCheck === false) {
-    console.log("hit if 1");
+  const emailCheck = getUserByEmail(email, users);
+  if (!emailCheck) {
     return res.sendStatus(403);
   }
   
   if (!bcrypt.compareSync(password, users[emailCheck]['password'])) {
-    console.log("hit if 2");
     return res.sendStatus(403);
   }
 
@@ -119,7 +120,7 @@ app.get('/urls', (req, res) => {
   }
 
   const uId = req.session.user_id;
-  let filteredUrls = urlsForUser(uId);
+  let filteredUrls = getUrlsForUser(uId, urlDatabase);
 
   const templateVars = { urls: filteredUrls, userId: users[req.session.user_id] };
   res.render('urls_index', templateVars);
@@ -153,7 +154,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   }
 
   const uId = req.session.user_id;
-  let filteredUrls = urlsForUser(uId);
+  let filteredUrls = getUrlsForUser(uId, urlDatabase);
   if (!(req.params.shortURL in filteredUrls)) {
     return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
   }
@@ -170,7 +171,7 @@ app.post('/urls/:shortURL/update', (req, res) => {
   }
 
   const uId = req.session.user_id;
-  let filteredUrls = urlsForUser(uId);
+  let filteredUrls = getUrlsForUser(uId, urlDatabase);
   if (!(req.params.shortURL in filteredUrls)) {
     return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
   }
@@ -195,7 +196,7 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 
   const uId = req.session.user_id;
-  let filteredUrls = urlsForUser(uId);
+  let filteredUrls = getUrlsForUser(uId, urlDatabase);
   if (!(req.params.shortURL in filteredUrls)) {
     return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
   }
@@ -207,35 +208,3 @@ app.get('/urls/:shortURL', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-// generate a random 6-digit alpha numeric string 
-function generateRandomString() {
-  const allChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const stringLength = 6;
-  let outputString = '';
-  for (let i = 0; i < stringLength; i++) {
-    outputString += allChars.charAt(Math.floor(Math.random() * allChars.length));
-  }
-  return outputString;
-}
-
-// check if an email exists and return the user_id if found
-const checkEmailExists = function(email) {
-  for (const user in users) {
-    if (users[user]['email'] === email) {
-      return user;
-    }
-  }
-  return false;
-};
-
-// return all urls that are associated with an id
-const urlsForUser = function(id) {
-  let filteredUrlDatabase = {};
-  for(const url in urlDatabase) {
-    if(urlDatabase[url]['userID'] === id) {
-      filteredUrlDatabase[url] = { ...urlDatabase[url] };
-    }
-  }
-  return filteredUrlDatabase;
-};
