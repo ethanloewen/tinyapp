@@ -24,10 +24,10 @@ const urlDatabase = {
 
 // user data
 const users = { 
-  "default": {
+  "exampleID": {
     id: "exampleID", 
     email: "user@example.com", 
-    password: "example-password"
+    password: "password"
   },
 }
 
@@ -99,8 +99,17 @@ app.post('/logout', (req, res) => {
   res.redirect('/urls');
 });
 
+// render urls page
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, userId: users[req.cookies['user_id']] };
+
+  if (!req.cookies['user_id']) {
+    return res.send('<a href="/login"><button>Please log in</button></a>');
+  }
+
+  const uId = req.cookies['user_id'];
+  let filteredUrls = urlsForUser(uId);
+
+  const templateVars = { urls: filteredUrls, userId: users[req.cookies['user_id']] };
   res.render('urls_index', templateVars);
 });
 
@@ -110,10 +119,8 @@ app.post('/urls', (req, res) => {
     return res.send('Error: user not logged in');
   }
   const shortURL = generateRandomString();
-  console.log('DB before adding new', urlDatabase);
   urlDatabase[shortURL] = { longURL: req.body['longURL'] };
   urlDatabase[shortURL]['userID'] = req.cookies['user_id'];
-  console.log('DB after adding new', urlDatabase);
   res.redirect('/urls/' + shortURL);
 });
 
@@ -129,9 +136,7 @@ app.get('/urls/new', (req, res) => {
 
 // delete url
 app.post('/urls/:shortURL/delete', (req, res) => {
-  console.log('DB before delete', urlDatabase);
   delete urlDatabase[req.params.shortURL];
-  console.log('DB after delete', urlDatabase);
   res.redirect('/urls');
 });
 
@@ -139,7 +144,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.post('/urls/:shortURL/update', (req, res) => {
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL]['longURL'] = req.body['longURL'];
-  res.redirect('/urls/' + shortURL);
+  res.redirect('/urls');
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -150,7 +155,23 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(longURL);
 });
 
+//breakpoint
 app.get('/urls/:shortURL', (req, res) => {
+  if (!req.cookies['user_id']) {
+    return res.send('Error: user not logged in');
+  }
+
+  const uId = req.cookies['user_id'];
+  let filteredUrls = urlsForUser(uId);
+  if (!(req.params.shortURL in filteredUrls)) {
+    return res.send('Error: could not find ' + req.params.shortURL + ' in your account');
+  }
+  // for (const url in filteredUrls) {
+  //   if (filteredUrls[url]['userID'] === uId) {
+
+  //   }
+  // }
+
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'], userId: users[req.cookies['user_id']] };
   res.render('urls_show', templateVars);
 });
@@ -178,4 +199,16 @@ const checkEmailExists = function(email) {
     }
   }
   return false;
+};
+
+//
+const urlsForUser = function(id) {
+  // const uId = req.cookies['user_id'];
+  let filteredUrlDatabase = {};
+  for(const url in urlDatabase) {
+    if(urlDatabase[url]['userID'] === id) {
+      filteredUrlDatabase[url] = { ...urlDatabase[url] };
+    }
+  }
+  return filteredUrlDatabase;
 };
