@@ -58,13 +58,13 @@ app.post('/register', (req, res) => {
   const randId = generateRandomString();
   // check if inputs are blank
   if (req.body['email'] === '' || req.body['password'] === '') {
-    return res.sendStatus(400);
+    return res.status(400).send('<h3>Email or password was left empty - please try again</h3>');
   }
 
   // check if email is in use already
   const email = req.body['email'];
   if (getUserByEmail(email, users)) {
-    return res.sendStatus(400);
+    return res.status(400).send('<h3>Email already in use - please try again</h3>');
   }
 
   //console.log('before adding', users);
@@ -80,6 +80,11 @@ app.post('/register', (req, res) => {
 
 // login get
 app.get('/login', (req, res) => {
+  // redirect if user is logged in
+  if (req.session.user_id) {
+    return res.redirect('/urls');
+  }
+
   const templateVars = { urls: urlDatabase, userId: users[req.session.user_id] };
   res.render('urls_login', templateVars);
 });
@@ -90,11 +95,11 @@ app.post('/login', (req, res) => {
   const password = req.body['password'];
   const emailCheck = getUserByEmail(email, users);
   if (!emailCheck) {
-    return res.sendStatus(403);
+    return res.status(403).send('<h3>There was an error logging in - check your spelling</h3>');
   }
   
   if (!bcrypt.compareSync(password, users[emailCheck]['password'])) {
-    return res.sendStatus(403);
+    return res.status(403).send('<h3>There was an error logging in - check your spelling</h3>');
   }
 
   req.session.user_id = emailCheck;
@@ -110,7 +115,6 @@ app.post('/logout', (req, res) => {
 
 // render urls page
 app.get('/urls', (req, res) => {
-
   if (!req.session.user_id) {
     return res.send('<h3 style="display: inline; margin-right: 15px;">Error: User not logged in</h3><a href="/login" style="display: inline"><button>Please log in</button></a>');
   }
@@ -127,6 +131,7 @@ app.post('/urls', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: user not logged in');
   }
+
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body['longURL'] };
   urlDatabase[shortURL]['userID'] = req.session.user_id;
