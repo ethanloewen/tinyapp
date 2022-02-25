@@ -1,23 +1,24 @@
 const express = require('express');
 const app = express();
 const PORT = 3000;
+app.set('view engine', 'ejs');
+
 const bodyParser = require('body-parser');
-const cookieSession = require('cookie-session'); 
+app.use(bodyParser.urlencoded({extended: true}));
+
+const bcrypt = require('bcryptjs');
+
+const cookieSession = require('cookie-session');
 app.use(cookieSession({
   name: 'session',
   keys: ['testkey'],
   maxAge: 24 * 60 * 60 * 1000
 }));
-const req = require('express/lib/request');
-app.use(bodyParser.urlencoded({extended: true}));
-const bcrypt = require('bcryptjs');
-
-app.set('view engine', 'ejs');
 
 // import helper functions
 const { getUserByEmail, getUrlsForUser, generateRandomString } = require('./helpers');
 
-// url data
+// url database
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -30,30 +31,26 @@ const urlDatabase = {
   }
 };
 
-// user data
-const users = { 
+// user database
+const users = {
   "exampleID": {
-    id: "exampleID", 
-    email: "user@example.com", 
+    id: "exampleID",
+    email: "user@example.com",
     password: bcrypt.hashSync('pass', 10)
-  },
-}
+  }
+};
 
-app.get('/', (req, res) => {
-  res.send('Hello!');
-});
-
-// load register page
+// ---/register---
 app.get('/register', (req, res) => {
   const templateVars = { urls: urlDatabase, userId: users[req.session.user_id] };
   // redirect if user is logged in
   if (req.session.user_id) {
     return res.redirect('/urls');
   }
+
   res.render('urls_register', templateVars);
 });
 
-// handle posts from /register
 app.post('/register', (req, res) => {
   const randId = generateRandomString();
   // check if inputs are blank
@@ -67,18 +64,16 @@ app.post('/register', (req, res) => {
     return res.status(400).send('<h3>Email already in use - please try again</h3>');
   }
 
-  //console.log('before adding', users);
   users[randId] = {
     id: randId,
     email: req.body['email'],
     password: bcrypt.hashSync(req.body['password'], 10)
   };
-  //console.log('after adding', users);
   req.session.user_id = randId;
   res.redirect('/urls');
 });
 
-// login get
+// ---/login---
 app.get('/login', (req, res) => {
   // redirect if user is logged in
   if (req.session.user_id) {
@@ -89,7 +84,6 @@ app.get('/login', (req, res) => {
   res.render('urls_login', templateVars);
 });
 
-// login post
 app.post('/login', (req, res) => {
   const email = req.body['email'];
   const password = req.body['password'];
@@ -106,14 +100,14 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-// logout post
+// ---/logout---
 app.post('/logout', (req, res) => {
   // clear cookies
   req.session = null;
   res.redirect('/urls');
 });
 
-// render urls page
+// ---/urls---
 app.get('/urls', (req, res) => {
   if (!req.session.user_id) {
     return res.send('<h3 style="display: inline; margin-right: 15px;">Error: User not logged in</h3><a href="/login" style="display: inline"><button>Please log in</button></a>');
@@ -126,7 +120,6 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// add new url
 app.post('/urls', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: user not logged in');
@@ -138,7 +131,7 @@ app.post('/urls', (req, res) => {
   res.redirect('/urls');
 });
 
-// render new url page
+// ---/urls/new---
 app.get('/urls/new', (req, res) => {
   // redirect if user is not logged in
   if (!req.session.user_id) {
@@ -148,7 +141,7 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
-// delete url
+// ---/urls/:shortURL/delete---
 app.post('/urls/:shortURL/delete', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: must be logged in to delete a URL');
@@ -164,9 +157,8 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-// update url
+// ---/urls/:shortURL/update---
 app.post('/urls/:shortURL/update', (req, res) => {
-
   if (!req.session.user_id) {
     return res.send('Error: must be logged in to update a URL');
   }
@@ -182,6 +174,7 @@ app.post('/urls/:shortURL/update', (req, res) => {
   res.redirect('/urls');
 });
 
+// ---/u/:shortURL---
 app.get('/u/:shortURL', (req, res) => {
   if (!(req.params.shortURL in urlDatabase)) {
     return res.send("Error: short URL '" + req.params.shortURL + "' not found");
@@ -190,7 +183,7 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(longURL);
 });
 
-// render the urls_show page
+// ---/urls/:shortURL---
 app.get('/urls/:shortURL', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: user not logged in');
@@ -211,5 +204,5 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TinyApp listening on port ${PORT}!`);
 });

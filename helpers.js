@@ -11,16 +11,16 @@ const getUserByEmail = function(email, usersDB) {
 // return all objects with urls that are associated with a user id
 const getUrlsForUser = function(id, urlDB) {
   let filteredUrlDatabase = {};
-  for(const url in urlDB) {
-    if(urlDB[url]['userID'] === id) {
+  for (const url in urlDB) {
+    if (urlDB[url]['userID'] === id) {
       filteredUrlDatabase[url] = { ...urlDB[url] };
     }
   }
   return filteredUrlDatabase;
 };
 
-// generate a random 6-digit alpha numeric string 
-function generateRandomString() {
+// generate a random 6-digit alpha numeric string
+const generateRandomString = function() {
   const allChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const stringLength = 6;
   let outputString = '';
@@ -28,7 +28,7 @@ function generateRandomString() {
     outputString += allChars.charAt(Math.floor(Math.random() * allChars.length));
   }
   return outputString;
-}
+};
 
 module.exports = {
   getUserByEmail,
