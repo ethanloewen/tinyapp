@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = 8080;
 app.set('view engine', 'ejs');
 
 const bodyParser = require('body-parser');
@@ -40,7 +40,7 @@ const users = {
   }
 };
 
-// ---/register---
+// --- /register ---
 app.get('/register', (req, res) => {
   const templateVars = { urls: urlDatabase, userId: users[req.session.user_id] };
   // redirect if user is logged in
@@ -73,7 +73,7 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
-// ---/login---
+// --- /login ---
 app.get('/login', (req, res) => {
   // redirect if user is logged in
   if (req.session.user_id) {
@@ -100,14 +100,14 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-// ---/logout---
+// --- /logout ---
 app.post('/logout', (req, res) => {
   // clear cookies
   req.session = null;
   res.redirect('/urls');
 });
 
-// ---/urls---
+// --- /urls ---
 app.get('/urls', (req, res) => {
   if (!req.session.user_id) {
     return res.send('<h3 style="display: inline; margin-right: 15px;">Error: User not logged in</h3><a href="/login" style="display: inline"><button>Please log in</button></a>');
@@ -131,7 +131,7 @@ app.post('/urls', (req, res) => {
   res.redirect('/urls');
 });
 
-// ---/urls/new---
+// --- /urls/new ---
 app.get('/urls/new', (req, res) => {
   // redirect if user is not logged in
   if (!req.session.user_id) {
@@ -141,7 +141,7 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
-// ---/urls/:shortURL/delete---
+// --- /urls/:shortURL/delete ---
 app.post('/urls/:shortURL/delete', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: must be logged in to delete a URL');
@@ -157,7 +157,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-// ---/urls/:shortURL/update---
+// --- /urls/:shortURL/update ---
 app.post('/urls/:shortURL/update', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: must be logged in to update a URL');
@@ -174,7 +174,7 @@ app.post('/urls/:shortURL/update', (req, res) => {
   res.redirect('/urls');
 });
 
-// ---/u/:shortURL---
+// --- /u/:shortURL ---
 app.get('/u/:shortURL', (req, res) => {
   if (!(req.params.shortURL in urlDatabase)) {
     return res.send("Error: short URL '" + req.params.shortURL + "' not found");
@@ -183,7 +183,7 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(longURL);
 });
 
-// ---/urls/:shortURL---
+// --- /urls/:shortURL ---
 app.get('/urls/:shortURL', (req, res) => {
   if (!req.session.user_id) {
     return res.send('Error: user not logged in');
@@ -201,6 +201,15 @@ app.get('/urls/:shortURL', (req, res) => {
   
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]['longURL'], userId: users[req.session.user_id] };
   res.render('urls_show', templateVars);
+});
+
+// --- / ---
+app.get('/', (req, res) => {
+  if (!req.session.user_id) {
+    return res.redirect('/login');
+  }
+
+  return res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
